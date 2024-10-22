@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRPGキャラクター10連ガチャ</title>
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+            position: relative;
+        }
+        a,a:hover,a:visited{
+    color: inherit;
+    text-decoration: none;
+}
+
+        /* 右上に排出確率を表示 */
+        .odds {
+            position: absolute;
+            top: -20px;
+            right: 10px;
+            text-align: right;
+        }
+
+        .odds h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .odds p {
+            margin: 5px 0;
+        }
+
+        /* ボタンをおしゃれに */
+        button {
+            background-color: #4CAF50; /* 緑色 */
+            color: white;
+            padding: 15px 32px;
+            font-size: 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* ガチャ結果のスタイル */
+        .results {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .result {
+            flex: 1 1 calc(20% - 15px); /* 1行に5つ */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            text-align: center;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .result img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+
+        .rare {
+            color: blue;
+        }
+
+        .super-rare {
+            color: green;
+        }
+
+        .ultra-rare {
+            color: red;
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .result {
+                flex: 1 1 calc(33.33% - 15px); /* スマホの場合は1行3つ */
+            }
+        }
+
+        /* タブのスタイル */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ccc;
+        }
+
+        .tabs button {
+            background-color: rgb(219, 219, 219);
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-bottom: 2px solid transparent;
+            color: black;
+        }
+
+        .tabs button.active {
+            background-color: #4CAF50;
+            color: white;
+            border-bottom: 2px solid #4CAF50;
+        }
+
+        .tabs button:hover {
+            background-color: #4CAF50;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 履歴のスタイル */
+        .history {
+            margin-top: 20px;
+        }
+
+        .history-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: black;
+        }
+
+        /* 詳細表示のための三角ボタン */
+        .toggle-button {
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px;
+            margin-right: 10px;
+            display: inline-block; /* ボタンを常に表示させる */
+        }
+
+        /* 詳細表示の切り替え */
+        .hidden {
+            display: none;
+        }
+
+        .visible {
+            display: block;
+        }
+
+        /* 出現回数を表示するスタイル */
+        .character-count {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        /* ソートボタンのスタイル */
+        .sort-buttons {
+            margin: 10px 0;
+        }
+
+        .sort-buttons button {
+            margin-right: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- 排出確率表示 -->
+    <div class="odds">
+        <h2>排出確率</h2>
+        <p>レア: 82.5%(136種類)</p>
+        <p>スーパーレア: 15.0%(59種類)</p>
+        <p>ウルトラレア: 2.5%(29種類)</p>
+    </div>
+
+    <h1>TRPGキャラクター10連ガチャ</h1>
+
+    <!-- タブメニュー -->
+    <div class="tabs">
+        <button class="tab-link active" onclick="openTab(event, 'gacha-tab')">ガチャを引く</button>
+        <button class="tab-link" onclick="openTab(event, 'history-tab')">ガチャ履歴</button>
+        <button class="tab-link" onclick="openTab(event, 'count-tab')">キャラクター出現回数</button>
+    </div>
+
+    <!-- ガチャを引くタブ -->
+    <div id="gacha-tab" class="tab-content active">
+        <!-- ガチャボタン -->
+        <button onclick="rollGacha()">全体でガチャる</button>
+
+        <label for="tag-select">タグで検索:</label>
+        <select id="tag-select">
+        <option value="アポ">アポ</option>
+        <option value="ポテト">おいも</option>
+        <option value="フォル">フォル</option>
+        <option value="パピコ">パピコ</option>
+        <option value="クルス">クルス</option>  
+</select>
+<button onclick="rollGachaByTag()">タグでガチャる</button>
+
+
+        <!-- ガチャ結果の表示エリア -->
+        <div id="results" class="results"></div>
+    </div>
+
+
+
+
+</div> 
+    </div>
+
+    <!-- ガチャ履歴のタブ -->
+    <div id="history-tab" class="tab-content">
+        <div class="history">
+            <div class="history-title">ガチャ履歴</div>
+            <div id="history"></div>
+        </div>
+    </div>
+
+    <!-- キャラクター出現回数のタブ -->
+    <div id="count-tab" class="tab-content">
+        <div class="character-count">
+            <h3>キャラクター出現回数</h3>
+
+
+            <div class="sort-buttons">
+                <button onclick="sortByOrder()">デフォルト</button>
+                <button onclick="sortByName()">名前順</button>
+                <button onclick="sortByUpCount()">多い順</button>
+                <button onclick="sortByCount()">少ない順</button>
+                <button onclick=" sortByRarity()">レアリティ順</button>
+            </div>
+            <ul id="character-count-list"></ul>
+        </div>
+    </div>
+
+    <script>
+       
+        let historyList = []; // ガチャ履歴を保存する配列
+        let characterCountHistory = []; // キャラクターが出た順に記録する
+
+        // キャラクターごとの出現回数を保存するオブジェクト
+        const characterCount = {
+            "朝凪トワ": 0,
+            "泡沫セツナ": 0,
+            "蒲城凛": 0,
+            "栖原凪咲": 0,
+            "高林良輔":0,
+            "東方仗之助":0,
+            "綾瀬バララ":0,
+            "♪ちゃん":0,
+            "薩陸須琉雄(コロアキ)":0,
+            "セリヌ・米呂須":0,
+            "小田桐カナタ":0,
+            "塚本葵":0,
+            "虎鰤":0,
+            "駄々友三郎":0,
+            "小南凪夢子":0,
+            "ローレン・ミッシェル・有本":0,
+            "トキネル・アイキューニ":0,
+            "高島英雄":0,
+            "武島豊":0,
+            "寺本洸一":0,
+            "舘亜希":0,
+            "星野ベガ":0,
+            "志摩達也":0,
+            "ブライアン・ミッシェル・有本":0,
+            "竹園レッダ":0,
+            "伊成一":0,
+            "朝倉ナッキオ":0,
+            "高雲太良子":0,
+            "月宮曲花":0,
+            "藤島紗栄子":0,
+            "来栖真":0,
+            "岸辺浩作":0,
+            "八飛曜":0,
+            "水月颯之介":0,
+            "赤城 海二":0,
+            "気道慎一":0,
+            "ムパロ・スカ・アピタ":0,
+            "緒方瞬":0,
+            "四条ちとせ":0,
+            "裵竜也":0,
+            "芳野レイナ":0,
+            "ペガサス・クレシェント":0,
+            "高木龍一":0,
+            "クリス":0,
+            "奥村延彦":0,
+            "愛染圭一郎":0,
+            "織笠勇利":0,
+            "黒木幸隆":0,
+            "掟真司":0,
+            "亜久真野絶斗":0,
+            "大城戸賢木":0,
+            "夜桜涼夏":0,
+            "夜風影太":0,
+            "白沢聡":0,
+            "日向溶太":0,
+            "綿虫蛇":0,
+            "成田朱夏":0,
+            "小田月菜":0,
+            "独歩吟客":0,
+            "淀祐樹":0,
+            "星咲親弘":0,
+            "国谷陽":0,
+            "与謝野アキエ":0,
+            "丸井円":0,
+            "桃井マオ":0,
+            "聖域音衣斗":0,
+            "劣疑グリム":0,
+            "細谷文彰":0,
+            "巴音去":0,
+            "江戸川マヨイ":0,
+            "月代蒼朮":0,
+            "高野鏡花":0,
+            "跡部美也子":0,
+            "綿屋エミ":0,
+            "国木田清春":0,
+            "奴田原沙織":0,
+            "鶴見メモル":0,
+            "日暈花瑠菜":0,
+            "杉浦鉄":0,
+            "涼風夏鈴":0,
+            "青木直人":0,
+            "陸奥五郎":0,
+            "柊颯":0,
+            "櫻木踊":0,
+            "楠木学":0,
+            "来我植哉":0,
+            "花水木鏡":0,
+            "高山祐介":0,
+            "ヨグ = 祖 = トス":0,
+            "レイブン(621)":0,
+            "大野満":0,
+            "生魂太郎":0,
+            "星乃光":0,
+            "杉田敵和":0,
+            "アザ = 外 = トス":0,
+            "革命moroha":0,
+            "百万超邪桔梗":0,
+            "華夜和井可愛":0,
+            "ウボ = 犠 = スラ":0,
+            "ルルカロス":0,
+            "海条三太郎":0,
+            "欅方拳":0,
+            "片桐紫苑":0,
+            "秤アツコ":0,
+            "泥濘愛":0,
+            "勘解由小路楓":0,
+            "角谷二三郎":0,
+            "弦巻彩華":0,
+            "薄弱ルズ":0,
+            "姫乃樹千代":0,
+            "月宮アザミ":0,
+            "鈴月爛":0,
+            "歌澄リリー":0,
+            "不知火紫":0,
+            "芙蓉菖蒲":0,
+            "千草葵":0,
+            "シュブ = 瓊 = グラス":0,
+            "勘解由小路椛":0,
+            "八雲天駆飛翔馬":0,
+            "夜桜麗":0,
+            "天川晴":0,
+            "天道光":0,
+            "灑瀲雫":0,
+            "ニャル = 邏 = トテップ":0,
+            "鏡音愛莉朱":0,
+            "五霊篝":0,
+            "黒崎心春":0,
+            "双海雪寧":0,
+            "五行紬":0,
+            "泡沫玖音":0,
+            "櫻井靜香":0,
+            "高木流美":0,
+            "Dorothy・Wizdom":0,
+            "荒川緋斗士":0,
+            "浅井洪拓":0,
+            "家引子守":0,
+            "赤俶恋湖奴":0,
+            "桑原悠季":0,
+            "金友羚見":0,
+            "上春旭朋":0,
+            "佐藤浩一":0,
+            "山下薫":0,
+            "生魚人足":0,
+            "痣唐須":0,
+            "山光之助":0,
+            "正義英雄":0,
+            "江戸川一":0,
+            "松田英知":0,
+            "Unkwon":0,
+            "オカルト-ゲイム-γ":0,
+            "海里成章":0,
+            "松下義之":0,
+            "桐谷祐佳":0,
+            "善院扇":0,
+            "南向日葵":0,
+            "桐谷祐奈":0,
+            "吉田恭子":0,
+            "ゲイダル・マカロフ":0,
+            "夢見紗都子":0,
+            "早坂陽菜":0,
+            "高橋百合":0,
+            "藤倉透":0,
+            "田中千香子":0,
+            "空海諦":0,
+            "星野遊":0,
+            "月宮スミレ":0,
+            "日向綾乃":0,
+            "アイ":0,
+            "笠原真弓":0,
+            "藤倉まどか":0,
+            "服部平一":0,
+            "日野森静":0,
+            "竜胆ツツジ":0,
+            "矢吹蘭":0,
+            "小松裕一":0,
+            "長山蓮季":0,
+            "梅園寧々子":0,
+            "皇芳野":0,
+            "小田真輝":0,
+            "八宮翼":0,
+            "リアーナ・ロワール":0,
+            "立花葵":0,
+            "間宮千尋":0,
+            "夏白なのか":0,
+            "朝凪トワ":0,
+            "執行正義":0,
+            "栖原嵐":0,
+            "如月沙苗":0,
+            "岸田検討":0,
+            "木下トオル":0,
+            "ナゼ・カズ・ミズカ":0,
+            "那由多":0,
+            "村雨カヨコ":0,
+            "ピピ美【一號】":0,
+            "一ノ瀬晴香":0,
+            "星熊ヒナコ":0,
+            "宮村ノゾミ":0,
+            "伏見モエ":0,
+            "高野秋吉":0,
+            "立花興毅":0,
+            "村田シグレ":0,
+            "伊藤園海苔巻":0,
+            "篠原稔":0,
+            "阿部國士":0,
+            "物延ミノ":0,
+            "西宮一穂":0,
+            "文月梓乃":0,
+            "山埜大鯨":0,
+            "西川一歩":0,
+            "二島幸文":0,
+            "雛罌粟晴香":0,
+            "月宮陽葵":0,
+            "小關ゆい":0,
+            "宮野木加古":0,
+            "神薙璃月":0,
+            "神樂陽葵":0,
+            "星原楊":0,
+            "御旗幸燿":0,
+            "美那星薫":0,
+            "秋月穂乃歌":0,
+            "白瀚綺華":0,
+            "双海雪春":0,
+            "暮嶺水𦨖汰":0,
+            "木ノ原秀至":0,
+        };
+        //   "夜桜涼夏":0,
+        //{ name: "", img: "img/" },
+
+        // レアリティとキャラクター、画像の設定
+        const rarities = [
+            { name: "レア", probability: 0.825, characters: [
+                { name: "東方仗之助", img: "img/C/jounosuke.png",Tag:"クルス",url:"https://iachara.com/view/7457363"},
+                { name: "薩陸須琉雄(コロアキ)", img: "img/C/koroaki.jpg",Tag:"クルス",url:"https://iachara.com/view/7604835"},
+                { name: "高林良輔", img: "img/C/takabayashi.png",Tag:"クルス",url:"https://iachara.com/view/7975631" },
+                { name: "綾瀬バララ", img: "img/C/brr.png",Tag:"クルス",url:"https://iachara.com/view/7509730" },
+                { name: "♪ちゃん", img: "img/C/onpu.png" ,Tag:"クルス",url:"https://iachara.com/view/7557166"},
+                { name: "セリヌ・米呂須", img: "img/C/merosu.png" ,Tag:"クルス",url:"https://iachara.com/view/7699639"},
+                { name: "小田桐カナタ", img: "img/C/odagiri.png",Tag:"クルス",url:"https://iachara.com/view/7931662" },
+                { name: "塚本葵", img: "img/C/tukamotoaoi.jpg" ,Tag:"クルス",url:"https://iachara.com/view/7831308"},
+                { name: "虎鰤", img: "img/C/toraburi.jpg",Tag:"クルス",url:"https://iachara.com/view/7877257" },
+                { name: "駄々友三郎", img: "img/C/tadatomo.jpg",Tag:"クルス",url:"https://iachara.com/view/7878567" },
+                { name: "小南凪夢子", img: "img/C/konami.png",Tag:"クルス",url:"https://iachara.com/view/7898389" },
+                { name: "高島英雄", img: "img/noimg.png",Tag:"クルス",url:"https://iachara.com/view/8118824" },
+                { name: "星野ベガ", img: "img/C/bega.png",Tag:"クルス",url:"https://iachara.com/view/8349466" },
+                { name: "志摩達也", img: "img/C/shimatatu.png",Tag:"クルス",url:"https://iachara.com/view/8352526" },
+                { name: "ブライアン・ミッシェル・有本", img: "img/C/burai.png",Tag:"クルス",url:"https://iachara.com/view/8432870" },
+                { name: "朝倉ナッキオ", img: "img/C/nakio.jpg",Tag:"クルス",url:"https://iachara.com/view/8509979" },
+                { name: "高雲太良子", img: "img/C/dayoko.png",Tag:"クルス",url:"https://iachara.com/view/8555972" },
+                { name: "藤島紗栄子", img: "img/C/huzisima.png",Tag:"クルス",url:"https://iachara.com/view/8663227" },
+                { name: "岸辺浩作", img: "img/C/kisibe.png",Tag:"クルス",url:"https://iachara.com/view/8830955" },
+                { name: "八飛曜", img: "img/C/happyou.jpg",Tag:"クルス",url:"https://iachara.com/view/8612128" },
+                { name: "水月颯之介", img: "img/C/suinosuke.png",Tag:"クルス",url:"https://iachara.com/view/8566674" },
+                { name: "気道慎一", img: "img/C/gedou.png",Tag:"クルス",url:"https://iachara.com/view/9007557" },
+                { name: "ムパロ・スカ・アピタ", img: "img/C/muska.jpg",Tag:"クルス",url:"https://iachara.com/view/9160364" },
+                { name: "四条ちとせ", img: "img/C/titose.png",Tag:"クルス",url:"https://iachara.com/view/9240997" },
+                { name: "裵竜也", img: "img/C/haitatu.jpg",Tag:"クルス",url:"https://iachara.com/view/8680761" },
+                { name: "芳野レイナ", img: "img/C/yoshinoreina.png",Tag:"クルス",url:"https://iachara.com/view/9527416" },
+                { name: "ペガサス・クレシェント", img: "img/C/prgasasu.png" ,Tag:"クルス",url:"https://iachara.com/view/9543604"},
+                { name: "クリス", img: "img/C/cris.png",Tag:"クルス",url:"https://iachara.com/view/9622880" },
+                { name: "奥村延彦", img: "img/C/okumura.png",Tag:"クルス",url:"https://iachara.com/view/9655611" },
+                { name: "黒木幸隆", img: "img/C/kurokitaka.png",Tag:"クルス",url:"https://iachara.com/view/9716564" },
+                { name: "亜久真野絶斗", img: "img/C/akuma.png",Tag:"クルス",url:"https://iachara.com/view/9841920" },
+                { name: "大城戸賢木", img: "img/C/o-kido.jpg",Tag:"クルス",url:"https://iachara.com/view/9863303" },
+                { name: "夜風影太", img: "img/P/yokazeei.png",Tag:"パピコ",url:"https://iachara.com/edit/6368718" },
+                { name: "白沢聡", img: "img/P/sekainoowari.png",Tag:"パピコ",url:"https://iachara.com/view/6529825" },
+                { name: "日向溶太", img: "img/noimg.png",Tag:"パピコ",url:"https://iachara.com/view/8025332" },
+                { name: "綿虫蛇", img: "img/P/watamusi.png",Tag:"パピコ",url:"https://iachara.com/view/7741487" },
+                { name: "成田朱夏", img: "img/noimg.png",Tag:"パピコ",url:"https://iachara.com/view/8431376" },
+                { name: "独歩吟客", img: "img/P/doppo.png",Tag:"パピコ",url:"https://iachara.com/view/8431376" },
+                { name: "淀祐樹", img: "img/P/yodoyuki.png",Tag:"パピコ",url:"https://iachara.com/view/8461806" },
+                { name: "与謝野アキエ", img: "img/P/yosanoakie.png",Tag:"パピコ",url:"https://iachara.com/view/8517636" },
+                { name: "丸井円", img: "img/P/moukona.png",Tag:"パピコ",url:"https://iachara.com/view/8025332" },
+                { name: "聖域音衣斗", img: "img/P/syouikineito.png",Tag:"パピコ",url:"https://iachara.com/view/8616845" },
+                { name: "劣疑グリム", img: "img/P/gurimu.png",Tag:"パピコ",url:"https://iachara.com/view/8663207" },
+                { name: "巴音去", img: "img/P/tomoeneko.png",Tag:"パピコ",url:"https://iachara.com/view/8830863" },
+                { name: "跡部美也子", img: "img/P/atobe.png",Tag:"パピコ",url:"https://iachara.com/view/9208838" },
+                { name: "綿屋エミ", img: "img/P/emi.png",Tag:"パピコ",url:"https://iachara.com/view/9162738" },
+                { name: "日暈花瑠菜", img: "img/P/higasakaruna.png",Tag:"パピコ",url:"https://iachara.com/view/9606857" },
+                { name: "杉浦鉄", img: "img/P/tetu.png",Tag:"パピコ",url:"https://iachara.com/view/9664755" },
+                { name: "青木直人", img: "img/noimg.png",Tag:"フォル",url:"https://iachara.com/view/5352577" },
+                { name: "陸奥五郎", img: "img/noimg.png",Tag:"フォル",url:"https://iachara.com/view/5711774" },
+                { name: "柊颯", img: "img/F/hiragi.png",Tag:"フォル",url:"https://iachara.com/view/5385610" },
+                { name: "櫻木踊", img: "img/F/sakuragi.png",Tag:"フォル",url:"https://iachara.com/view/5939879" },
+                { name: "楠木学", img: "img/noimg.png",Tag:"フォル",url:"https://iachara.com/view/6103160" },
+                { name: "来我植哉", img: "img/F/kuruga.png",Tag:"フォル",url:"https://iachara.com/view/6157623" },
+                { name: "花水木鏡", img: "img/F/kyou.png",Tag:"フォル",url:"https://iachara.com/view/6261358" },
+                { name: "高山祐介", img: "img/F/takayama.png",Tag:"フォル" ,url:"https://iachara.com/view/5651491"},
+                { name: "レイブン(621)", img: "img/F/reibun.png",Tag:"フォル",url:"https://iachara.com/view/6993847" },
+                { name: "大野満", img: "img/F/oono.png",Tag:"フォル",url:"https://iachara.com/view/7354033" },
+                { name: "杉田敵和", img: "img/F/sugita.png",Tag:"フォル",url:"https://iachara.com/view/7654968" },
+                { name: "百万超邪桔梗", img: "img/F/kikyou.png",Tag:"フォル",url:"https://iachara.com/view/7877318" },
+                { name: "華夜和井可愛", img: "img/F/kawa.png",Tag:"フォル",url:"https://iachara.com/view/7878555" },
+                { name: "海条三太郎", img: "img/F/santarou.png",Tag:"フォル",url:"https://iachara.com/view/8025321" },
+                { name: "欅方拳", img: "img/F/ken.png",Tag:"フォル",url:"https://iachara.com/view/8084283" },
+                { name: "片桐紫苑", img: "img/F/sion.png",Tag:"フォル",url:"https://iachara.com/view/8071256" },
+                { name: "泥濘愛", img: "img/F/nukariai.png",Tag:"フォル",url:"https://iachara.com/view/8119725" },
+                { name: "角谷二三郎", img: "img/F/tunoya.png",Tag:"フォル",url:"https://iachara.com/view/8245706" },
+                { name: "弦巻彩華", img: "img/F/turumaki.png",Tag:"フォル",url:"https://iachara.com/view/8296220" },
+                { name: "薄弱ルズ", img: "img/F/ruzu.png",Tag:"フォル",url:"https://iachara.com/view/8349505" },
+                { name: "姫乃樹千代", img: "img/F/tiyo.png",Tag:"フォル",url:"https://iachara.com/view/8487757" },
+                { name: "不知火紫", img: "img/F/yukari.png",Tag:"フォル",url:"https://iachara.com/view/9109242" },
+                { name: "シュブ = 瓊 = グラス", img: "img/F/syubu.png" ,Tag:"フォル",url:"https://iachara.com/view/8712782"},
+                { name: "勘解由小路椛", img: "img/F/momuzi.png",Tag:"フォル",url:"https://iachara.com/view/8712782" },
+                { name: "八雲天駆飛翔馬", img: "img/F/kuraudo.png",Tag:"フォル",url:"https://iachara.com/view/9543629" },
+                { name: "天川晴", img: "img/F/hare.png",Tag:"フォル",url:"https://iachara.com/view/9560645" },
+                { name: "五霊篝", img: "img/F/gyoryou.png",Tag:"フォル",url:"https://iachara.com/view/9627197" },
+                { name: "ニャル = 邏 = トテップ", img: "img/F/nyaru.png",Tag:"フォル",url:"https://iachara.com/view/9583133" },
+                { name: "黒崎心春", img: "img/F/koharu.png",Tag:"フォル",url:"https://iachara.com/view/9701208" },
+                { name: "双海雪寧", img: "img/F/yukine.png",Tag:"フォル",url:"https://iachara.com/view/9744621" },
+                { name: "櫻井靜香", img: "img/F/sizuka.png",Tag:"フォル",url:"https://iachara.com/view/9841745" },
+                { name: "Dorothy・Wizdom", img: "img/F/dorosi.png",Tag:"フォル",url:"https://iachara.com/view/9863303" },
+                { name: "荒川緋斗士", img: "img/noimg.png",Tag:"ポテト",url:"https://iachara.com/view/5385609" },
+                { name: "浅井洪拓", img: "img/noimg.png",Tag:"ポテト",url:"https://iachara.com/view/5430865" },
+                { name: "家引子守", img: "img/noimg.png",Tag:"ポテト",url:"https://iachara.com/view/5711775" },
+                { name: "赤俶恋湖奴", img: "img/O/akasiku.png",Tag:"ポテト",url:"https://iachara.com/view/5771228" },
+                { name: "桑原悠季", img: "img/O/kuwahara.png",Tag:"ポテト",url:"https://iachara.com/view/5939878" },
+                { name: "金友羚見", img: "img/noimg.png",Tag:"ポテト",url:"https://iachara.com/view/6259573" },
+                { name: "上春旭朋", img: "img/O/heea.png",Tag:"ポテト",url:"https://iachara.com/view/6312901" },
+                { name: "佐藤浩一", img: "img/O/satokou.png",Tag:"ポテト",url:"https://iachara.com/view/5352564" },
+                { name: "山下薫", img: "img/O/yamashitakaoru.jpg",Tag:"ポテト",url:"https://iachara.com/view/6315519"},
+                { name: "痣唐須", img: "img/O/zi.png",Tag:"ポテト",url:"https://iachara.com/view/6759352" },
+                { name: "山光之助", img: "img/O/san.png",Tag:"ポテト",url:"https://iachara.com/view/7354043" },
+                { name: "江戸川一", img: "img/O/edogawahazime.png",Tag:"ポテト",url:"https://iachara.com/view/7509499" },
+                { name: "松田英知", img: "img/O/matudaeiti.png",Tag:"ポテト",url:"https://iachara.com/view/7556913" },
+                { name: "Unkwon", img: "img/O/Unknown.png",Tag:"ポテト",url:"https://iachara.com/view/7654880" },
+                { name: "松下義之", img: "img/O/matushita.png",Tag:"ポテト",url:"https://iachara.com/view/7878549" },
+                { name: "善院扇", img: "img/O/ougi.png",Tag:"ポテト",url:"https://iachara.com/view/7975490" },
+                { name: "桐谷祐奈", img: "img/O/kiriyuu.png",Tag:"ポテト",url:"https://iachara.com/view/7932798" },
+                { name: "吉田恭子", img: "img/O/yoshidakyouko.png",Tag:"ポテト",url:"https://iachara.com/view/8168467" },
+                { name: "ゲイダル・マカロフ", img: "img/O/makarigu.png",Tag:"ポテト",url:"https://iachara.com/view/8245691" },
+                { name: "夢見紗都子", img: "img/O/yumemi.png",Tag:"ポテト",url:"https://iachara.com/view/8296261" },
+                { name: "早坂陽菜", img: "img/O/hina.png",Tag:"ポテト",url:"https://iachara.com/view/8404650" },
+                { name: "田中千香子", img: "img/noimg.png",Tag:"ポテト",url:"https://iachara.com/view/8198582" },
+                { name: "星野遊", img: "img/O/hoshinoyuu.png",Tag:"ポテト",url:"https://iachara.com/view/8487678" },
+                { name: "藤倉まどか", img: "img/O/huzimado.png",Tag:"ポテト",url:"https://iachara.com/view/8834576" },
+                { name: "オカルト-ゲイム-γ", img: "img/O/torioka.png",Tag:"ポテト",url:"https://iachara.com/view/7654434" },
+                { name: "日野森静", img: "img/O/hinomiori.png",Tag:"ポテト",url:"https://iachara.com/view/9162684" },
+                { name: "竜胆ツツジ", img: "img/O/tutuzi.png",Tag:"ポテト",url:"https://iachara.com/view/9238376" },
+                { name: "梅園寧々子", img: "img/O/neneko.png",Tag:"ポテト",url:"https://iachara.com/view/9560535" },
+                { name: "小田真輝", img: "img/O/odamaki.png",Tag:"ポテト",url:"https://iachara.com/view/9586818" },
+                { name: "立花葵", img: "img/O/tatibana.png",Tag:"ポテト",url:"https://iachara.com/view/9701197" },
+                { name: "夏白なのか", img: "img/O/nanoka.png",Tag:"ポテト",url:"https://iachara.com/view/9730986" },
+                { name: "執行正義", img: "img/O/masayoshi.png",Tag:"ポテト",url:"https://iachara.com/view/9773197" },
+                { name: "如月沙苗", img: "img/A/sanae.png",Tag:"アポ",url:"https://iachara.com/view/5433129" },
+                { name: "木下トオル", img: "img/A/kinoto.png" ,Tag:"アポ",url:"https://iachara.com/view/5938242"},
+                { name: "ナゼ・カズ・ミズカ", img: "img/A/mizuka.png",Tag:"アポ",url:"https://iachara.com/view/6157630" },
+                { name: "那由多", img: "img/A/nayuta.png",Tag:"アポ",url:"https://iachara.com/view/4689500" },
+                { name: "村雨カヨコ", img: "img/A/kayoko.png",Tag:"アポ",url:"https://iachara.com/view/6529707" },
+                { name: "宮村ノゾミ", img: "img/A/miyamura.png",Tag:"アポ",url:"https://iachara.com/view/7556906" },
+                { name: "伏見モエ", img: "img/A/husimi.png",Tag:"アポ",url:"https://iachara.com/view/7654432" },
+                { name: "高野秋吉", img: "img/A/takuyasa.png",Tag:"アポ",url:"https://iachara.com/view/7788769" },
+                { name: "村田シグレ", img: "img/A/siguere.png",Tag:"アポ",url:"https://iachara.com/view/7898159" },
+                { name: "伊藤園海苔巻", img: "img/A/kakyouinn.png",Tag:"アポ",url:"https://iachara.com/view/7908789" },
+                { name: "篠原稔", img: "img/A/minori.png",Tag:"アポ",url:"https://iachara.com/view/8071182" },
+                { name: "阿部國士", img: "img/A/kunio.png",Tag:"アポ",url:"https://iachara.com/view/8118673" },
+                { name: "西宮一穂", img: "img/A/kazuho.png",Tag:"アポ",url:"https://iachara.com/view/8168457" },
+                { name: "山埜大鯨", img: "img/A/taigei.png",Tag:"アポ",url:"https://iachara.com/view/8349445" },
+                { name: "西川一歩", img: "img/A/nisikawakazuho.png" ,Tag:"アポ",url:"https://iachara.com/view/8404617"},
+                { name: "二島幸文", img: "img/A/yukihimi.png",Tag:"アポ",url:"https://iachara.com/view/8461705" },
+                { name: "小關ゆい", img: "img/A/kozekiyui.png",Tag:"アポ",url:"https://iachara.com/view/8663195" },
+                { name: "神薙璃月", img: "img/A/riko.png",Tag:"アポ",url:"https://iachara.com/view/8563498" },
+                { name: "神樂陽葵", img: "img/A/hinata.png",Tag:"アポ",url:"https://iachara.com/view/8945588" },
+                { name: "御旗幸燿", img: "img/A/kouyou.png",Tag:"アポ",url:"https://iachara.com/view/9257007" },
+                { name: "美那星薫", img: "img/A/kaoru.png",Tag:"アポ",url:"https://iachara.com/view/9467991" },
+                { name: "白瀚綺華", img: "img/A/ayaka.png",Tag:"アポ",url:"https://iachara.com/view/9677266" },
+                { name: "暮嶺水𦨖汰", img: "img/A/kurenimi.png",Tag:"アポ",url:"https://iachara.com/view/9780503" },
+
+            ], cssClass: "rare" },
+            { name: "スーパーレア", probability: 0.15, characters: [
+                { name: "トキネル・アイキューニ", img: "img/C/tokineru.png",Tag:"クルス",url:"https://iachara.com/view/8070174" },
+                { name: "武島豊", img: "img/C/takesima.png",Tag:"クルス",url:"https://iachara.com/view/8119618" },
+                { name: "寺本洸一", img: "img/C/teramoto.png",Tag:"クルス",url:"https://iachara.com/view/8194047" },
+                { name: "伊成一", img: "img/C/inari.png",Tag:"クルス",url:"https://iachara.com/view/8487718" },
+                { name: "月宮曲花", img: "img/C/tukimiyakyouka.png",Tag:"クルス",url:"https://iachara.com/view/8558700" },
+                { name: "来栖真", img: "img/C/kurusu.png",Tag:"クルス",url:"https://iachara.com/view/8715847" },
+                { name: "赤城 海二", img: "img/C/sekisiro.png",Tag:"クルス",url:"https://iachara.com/view/9057083" },
+                { name: "高木龍一", img: "img/C/takagiryuiti.png",Tag:"クルス",url:"https://iachara.com/view/9552755" },
+                { name: "愛染圭一郎", img: "img/C/keiitirou.png",Tag:"クルス",url:"https://iachara.com/view/9605186" },
+                { name: "織笠勇利", img: "img/C/orikasa.png",Tag:"クルス",url:"https://iachara.com/view/9669745" },
+                { name: "掟真司", img: "img/C/sinzikun.png",Tag:"クルス",url:"https://iachara.com/view/9731936" },
+                { name: "小田月菜", img: "img/P/odatukina.png",Tag:"パピコ",url:"https://iachara.com/view/7929270" },
+                { name: "星咲親弘", img: "img/P/hoshizakitikahiro.png",Tag:"パピコ",url:"https://iachara.com/view/8487800" },
+                { name: "国谷陽", img: "img/P/kunitaniharu.png",Tag:"パピコ",url:"https://iachara.com/view/8509944" },
+                { name: "江戸川マヨイ", img: "img/P/kunitaniharu.png",Tag:"パピコ",url:"https://iachara.com/view/8945674" },
+                { name: "国木田清春", img: "img/P/kunikida.png",Tag:"パピコ",url:"https://iachara.com/view/9301911" },
+                { name: "奴田原沙織", img: "img/P/mutahara.png",Tag:"パピコ",url:"https://iachara.com/view/9467979" },
+                { name: "月代蒼朮", img: "img/P/tukisiro.png",Tag:"パピコ",url:"https://iachara.com/view/9057024" },
+                { name: "涼風夏鈴", img: "img/P/karin.png",Tag:"パピコ",url:"https://iachara.com/view/9692415" },
+                { name: "ヨグ = 祖 = トス", img: "img/F/yoguso.png",Tag:"フォル",url:"https://iachara.com/view/6529725" },
+                { name: "生魂太郎", img: "img/F/syoukon.png",Tag:"フォル",url:"https://iachara.com/view/7457067" },
+                { name: "アザ = 外 = トス", img: "img/F/soto.png",Tag:"フォル",url:"https://iachara.com/view/7654450" },
+                { name: "革命moroha", img: "img/F/kakumei.png",Tag:"フォル",url:"https://iachara.com/view/7788850" },
+                { name: "ルルカロス", img: "img/F/rurukarosu.png",Tag:"フォル",url:"https://iachara.com/view/7975620" },
+                { name: "秤アツコ", img: "img/F/ginzi.png",Tag:"フォル",url:"https://iachara.com/view/8118764" },
+                { name: "勘解由小路楓", img: "img/F/kaede.png",Tag:"フォル",url:"https://iachara.com/view/8194075" },
+                { name: "鈴月爛", img: "img/F/ran.png",Tag:"フォル",url:"https://iachara.com/view/8715849" },
+                { name: "月宮アザミ", img: "img/F/tukimiyaazami.png",Tag:"フォル",url:"https://iachara.com/view/8562931" },
+                { name: "歌澄リリー", img: "img/F/rr.png",Tag:"フォル",url:"https://iachara.com/view/9007567" },
+                { name: "千草葵", img: "img/F/aoi.png",Tag:"フォル",url:"https://iachara.com/view/9259705" },
+                { name: "天道光", img: "img/F/hikari.png",Tag:"フォル",url:"https://iachara.com/view/9552756" },
+                { name: "灑瀲雫", img: "img/F/sizuku.png",Tag:"フォル",url:"https://iachara.com/view/9627240" },
+                { name: "鏡音愛莉朱", img: "img/F/arisu.png",Tag:"フォル",url:"https://iachara.com/view/9667366" },
+                { name: "五行紬", img: "img/F/tumugi.png",Tag:"フォル",url:"https://iachara.com/view/9731002" },
+                { name: "泡沫玖音", img: "img/F/kuon.png",Tag:"フォル",url:"https://iachara.com/view/9701215" },
+                { name: "正義英雄", img: "img/O/masayosi.png",Tag:" ポテト" ,url:"https://iachara.com/view/7406795"},
+                { name: "海里成章", img: "img/O/kairiseisyou.png",Tag:" ポテト",url:"https://iachara.com/view/7741435" },
+                { name: "桐谷祐佳", img: "img/O/kiritani.png",Tag:" ポテト",url:"https://iachara.com/view/7929139" },
+                { name: "南向日葵", img: "img/O/himawari.png",Tag:" ポテト",url:"https://iachara.com/view/8084247" },
+                { name: "藤倉透", img: "img/O/huzikurato.png",Tag:" ポテト",url:"https://iachara.com/view/8198582" },
+                { name: "空海諦", img: "img/O/tei.png",Tag:" ポテト",url:"https://iachara.com/view/8461702" },
+                { name: "月宮スミレ", img: "img/O/tukimijyasumire.png",Tag:" ポテト",url:"https://iachara.com/view/8562912" },
+                { name: "笠原真弓", img: "img/O/kasahara.png",Tag:" ポテト",url:"https://iachara.com/view/8830938" },
+                { name: "服部平一", img: "img/O/hukube.png",Tag:" ポテト",url:"https://iachara.com/view/9109224" },
+                { name: "矢吹蘭", img: "img/O/yabuki.png",Tag:" ポテト" ,url:"https://iachara.com/view/9527412"},
+                { name: "小松裕一", img: "img/O/komatuu.png",Tag:" ポテト",url:"https://iachara.com/view/9542987" },
+                { name: "皇芳野", img: "img/O/yoshinosannhakaerimasita.png",Tag:" ポテト",url:"https://iachara.com/view/9609987" },
+                { name: "リアーナ・ロワール", img: "img/O/rowa.png",Tag:" ポテト",url:"https://iachara.com/view/9677265" },
+                { name: "間宮千尋", img: "img/O/tihiro.png",Tag:" ポテト",url:"https://iachara.com/view/9716543" },
+                { name: "岸田検討", img: "img/A/kentou.png",Tag:" アポ" ,url:"https://iachara.com/view/5771220"},
+                { name: "星熊ヒナコ", img: "img/A/hosiguma.png",Tag:" アポ" ,url:"https://iachara.com/view/6531312"},
+                { name: "立花興毅", img: "img/A/kouki.png",Tag:" アポ",url:"https://iachara.com/view/7877297" },
+                { name: "物延ミノ", img: "img/A/mino.png",Tag:" アポ",url:"https://iachara.com/view/8119611" },
+                { name: "文月梓乃", img: "img/A/sino.png",Tag:" アポ",url:"https://iachara.com/view/8119611" },
+                { name: "雛罌粟晴香", img: "img/A/hinagesi.png",Tag:" アポ" ,url:"https://iachara.com/view/8550748"},
+                { name: "宮野木加古", img: "img/A/kako.png",Tag:" アポ",url:"https://iachara.com/view/8830811" },
+                { name: "星原楊", img: "img/A/yanagi.png",Tag:" アポ",url:"https://iachara.com/view/9209046" },
+                { name: "双海雪春", img: "img/A/yukiharu.png",Tag:" アポ",url:"https://iachara.com/view/9744578" },
+                { name: "木ノ原秀至", img: "img/A/syui.png",Tag:" アポ",url:"https://iachara.com/view/9787227" },
+
+            ], cssClass: "super-rare" },
+            { name: "ウルトラレア", probability: 0.025, characters: [
+                { name: "蒲城凛", img: "img/C/rin.png" ,Tag:" クルス",url:"https://iachara.com/view/9464564"},
+                { name: "ローレン・ミッシェル・有本", img: "img/C/roren.png",Tag:" クルス" ,url:"https://iachara.com/view/7929161"},
+                { name: "舘亜希", img: "img/C/tatiaki.png",Tag:" クルス",url:"https://iachara.com/view/8245685" },
+                { name: "竹園レッダ", img: "img/C/retta.png",Tag:" クルス",url:"https://iachara.com/view/8461720" },
+                { name: "緒方瞬", img: "img/C/ogata.png",Tag:" クルス",url:"https://iachara.com/view/9217033" },
+                { name: "夜桜涼夏", img: "img/C/yozakurasuzuka.png",Tag:" クルス",url:"https://iachara.com/view/9710843" },
+                { name: "朝凪トワ", img: "img/O/towa.png",Tag:" ポテト",url:"https://iachara.com/view/9465990" },
+                { name: "栖原凪咲", img: "img/A/nagi.png",Tag:" アポ",url:"https://iachara.com/view/9471171" },  // ピックアップ
+                { name: "桃井マオ", img: "img/P/momoimao.png",Tag:" パピコ",url:"https://iachara.com/view/8565641" },
+                { name: "細谷文彰", img: "img/P/hosoyasan.png",Tag:" パピコ",url:"https://iachara.com/view/8715866" },
+                { name: "高野鏡花", img: "img/P/takanokyouka.png",Tag:" パピコ",url:"https://iachara.com/view/9109196" },
+                { name: "鶴見メモル", img: "img/P/memoru.png",Tag:" パピコ",url:"https://iachara.com/view/9583204" },
+                { name: "泡沫セツナ", img: "img/F/setu.png",Tag:" フォル",url:"https://iachara.com/view/9416809" },
+                { name: "ウボ = 犠 = スラ", img: "img/F/ubosa.png",Tag:" フォル",url:"https://iachara.com/view/7898392"},
+                { name: "芙蓉菖蒲", img: "img/F/ayame.png",Tag:" フォル",url:"https://iachara.com/view/9217026" },
+                { name: "夜桜麗", img: "img/F/yozakurarei.png",Tag:" フォル",url:"https://iachara.com/view/9543615" },
+                { name: "星乃光", img: "img/F/sutar.png",Tag:" フォル",url:"https://iachara.com/view/6759359" },
+                { name: "高木流美", img: "img/F/rumi.png",Tag:" フォル",url:"https://iachara.com/view/9710847" },
+                { name: "生魚人足", img: "img/O/sakana.png",Tag:" ポテト",url:"https://iachara.com/view/6700390" },
+                { name: "高橋百合", img: "img/O/yuri.png" ,Tag:" ポテト",url:"https://iachara.com/view/8303137" },
+                { name: "日向綾乃", img: "img/O/himukai.png",Tag:" ポテト" ,url:"https://iachara.com/view/8616801" },
+                { name: "アイ", img: "img/O/ai.png",Tag:" ポテト",url:"https://iachara.com/view/8715827"  },
+                { name: "長山蓮季", img: "img/O/hasuki.png",Tag:" ポテト",url:"https://iachara.com/view/9552754"  },
+                { name: "八宮翼", img: "img/O/hatimiya.png",Tag:" ポテト",url:"https://iachara.com/view/9583187"  },
+                { name: "栖原嵐", img: "img/O/sumihararan.png",Tag:" ポテト" ,url:"https://iachara.com/view/9719678" },
+                { name: "ピピ美【一號】", img: "img/A/pipimi.png" ,Tag:" アポ",url:"https://iachara.com/view/6993810"},
+                { name: "一ノ瀬晴香", img: "img/A/itnose.png",Tag:" アポ",url:"https://iachara.com/view/7406827" },
+                { name: "月宮陽葵", img: "img/A/tukimiyahimari.png",Tag:" アポ",url:"https://iachara.com/view/8562916" },
+                { name: "秋月穂乃歌", img: "img/A/honoka.png",Tag:" アポ",url:"https://iachara.com/view/9637161" },
+            ], cssClass: "ultra-rare" }
+        ];
+
+        function countCharactersByRarity() {
+    rarities.forEach(rarity => {
+        const rarityName = rarity.name;  // レアリティ名
+        const characterCount = rarity.characters.length;  // キャラクターの数
+        console.log(`${rarityName}のキャラクター数: ${characterCount}種類`);
+    });
+}
+
+// 実行して結果を表示
+countCharactersByRarity();
+
+
+        // ピックアップキャラクターを指定し確率を上げる
+        const pickupCharacter = "栖原凪咲";  // ピックアップするキャラ
+        const pickup=0.06;//ピックアップの確率倍率
+        // タブ切り替え機能
+        function openTab(evt, tabId) {
+            // すべてのタブコンテンツを非表示に
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // すべてのタブリンクのactiveクラスを削除
+            const tabLinks = document.querySelectorAll('.tab-link');
+            tabLinks.forEach(link => link.classList.remove('active'));
+
+            // 選択したタブを表示し、リンクをactiveに
+            document.getElementById(tabId).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        // シャッフル用のヘルパー関数
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // ガチャを引く関数
+        function rollGacha() {
+            const resultsDiv = document.getElementById("results");
+            const historyDiv = document.getElementById("history");
+
+            // この部分の要素が存在するか確認
+            if (!resultsDiv || !historyDiv) {
+                console.error("要素が見つかりません。HTML内に 'results' または 'history' の要素が存在するか確認してください。");
+                return;
+            }
+
+            resultsDiv.innerHTML = '';  // 結果をリセット
+            let results = [];
+
+            // 9回は通常の抽選
+            for (let i = 0; i < 9; i++) {
+                results.push(draw());
+            }
+
+            // 10回目はスーパーレア以上の確定抽選
+            results.push(drawSuperRareOrHigher());
+
+            // 結果を表示
+            const currentResult = [];
+            results.forEach((result, index) => {
+    const resultDiv = document.createElement("div");
+    resultDiv.className = `result ${result.rarity.cssClass}`;
+
+    // URLを<a>タグで使う
+    resultDiv.innerHTML = `
+        <strong>No. ${index + 1}: ${result.character.name}</strong><br>
+        <a href="${result.character.url}" target="_blank">
+            <img src="${result.character.img}" alt="${result.character.name}" 
+                onerror="this.src='img/placeholder.png';" />
+        </a>
+        <p>${result.rarity.name}</p>
+    `;
+
+    resultsDiv.appendChild(resultDiv);
+
+                // 履歴用に保存
+                currentResult.push({
+                    name: result.character.name,
+                    rarity: result.rarity.name
+                });
+
+                // キャラクター出現回数をカウント
+                characterCount[result.character.name]++;
+                characterCountHistory.push({ name: result.character.name, count: characterCount[result.character.name] });
+            });
+
+            // ガチャ履歴に追加
+            historyList.push(currentResult);
+            updateHistory(historyDiv);
+            updateCharacterCount();  // 出現回数を更新
+        }
+
+        // 指定されたタグに基づいてキャラクターを抽選する関数
+function drawByTag(tag) {
+    const matchingCharacters = [];
+
+    // レアリティごとにタグに一致するキャラを収集
+    rarities.forEach(rarity => {
+        const filtered = rarity.characters.filter(char => char.Tag.includes(tag));
+        matchingCharacters.push(...filtered.map(char => ({ rarity, character: char })));
+    });
+
+    if (matchingCharacters.length === 0) {
+        console.log(`タグ「${tag}」に一致するキャラクターは見つかりませんでした。`);
+        return null; // 一致するキャラがいなかった場合
+    }
+
+    // シャッフルしてランダムに1体を選ぶ
+    const result = shuffle(matchingCharacters)[0];
+    return result;
+}
+
+// タグでガチャを引いて結果を表示する関数
+function rollGachaByTag() {
+    const selectedTag = document.getElementById("tag-select").value; // 選択されたタグを取得
+   
+
+    const resultsDiv = document.getElementById("results"); // 結果表示エリア
+    resultsDiv.innerHTML = ''; // 結果をリセット
+
+    for (let i = 0; i < 10; i++) {
+    const result = drawByTag(selectedTag); // タグで抽選
+    if (result) {
+        // 抽選結果を表示
+        const resultDiv = document.createElement("div");
+        resultDiv.className = `result ${result.rarity.cssClass}`;
+        resultDiv.innerHTML = `
+            <strong>${result.character.name}</strong><br>
+             <a href="${result.character.url}" target="_blank">
+            <img src="${result.character.img}" alt="${result.character.name}" onerror="this.src='img/placeholder.png';">
+            <p>${result.rarity.name}</p>
+        `;
+        resultsDiv.appendChild(resultDiv);
+    } else {
+        resultsDiv.innerHTML = '<p>該当するキャラクターが見つかりませんでした。</p>';
+    }
+}
+}
+
+        // 通常の確率に基づいてレアリティとキャラクターを抽選する関数
+        function draw() {
+            const random = Math.random(); // 0 ~ 1のランダム数値
+            let cumulativeProbability = 0;
+
+            // レアリティを抽選
+            for (const rarity of rarities) {
+                cumulativeProbability += rarity.probability;
+                if (random < cumulativeProbability) {
+                    // ピックアップキャラの場合、確率を上げる
+                    const shuffledCharacters = shuffle([...rarity.characters]); // キャラクターをシャッフル
+                    if (rarity.name === "ウルトラレア") {
+                        const pickupRate = pickup; // ピックアップキャラの確率設定
+                        if (Math.random() < pickupRate) {
+                            return { rarity, character: shuffledCharacters.find(char => char.name === pickupCharacter) };
+                        }
+                    }
+                    const character = shuffledCharacters[0]; // シャッフル後の最初のキャラを選ぶ
+                    return { rarity, character };
+                }
+            }
+
+            // 万が一の場合のデフォルト
+            return { rarity: rarities[0], character: rarities[0].characters[0] };
+        }
+
+        // スーパーレア以上を抽選する関数
+        function drawSuperRareOrHigher() {
+            const specialRarities = [
+                { name: "スーパーレア", probability: 0.975 / (0.975 + 0.025), characters: [
+                { name: "トキネル・アイキューニ", img: "img/C/tokineru.png",Tag:"クルス",url:"https://iachara.com/view/8070174" },
+                { name: "武島豊", img: "img/C/takesima.png",Tag:"クルス",url:"https://iachara.com/view/8119618" },
+                { name: "寺本洸一", img: "img/C/teramoto.png",Tag:"クルス",url:"https://iachara.com/view/8194047" },
+                { name: "伊成一", img: "img/C/inari.png",Tag:"クルス",url:"https://iachara.com/view/8487718" },
+                { name: "月宮曲花", img: "img/C/tukimiyakyouka.png",Tag:"クルス",url:"https://iachara.com/view/8558700" },
+                { name: "来栖真", img: "img/C/kurusu.png",Tag:"クルス",url:"https://iachara.com/view/8715847" },
+                { name: "赤城 海二", img: "img/C/sekisiro.png",Tag:"クルス",url:"https://iachara.com/view/9057083" },
+                { name: "高木龍一", img: "img/C/takagiryuiti.png",Tag:"クルス",url:"https://iachara.com/view/9552755" },
+                { name: "愛染圭一郎", img: "img/C/keiitirou.png",Tag:"クルス",url:"https://iachara.com/view/9605186" },
+                { name: "織笠勇利", img: "img/C/orikasa.png",Tag:"クルス",url:"https://iachara.com/view/9669745" },
+                { name: "掟真司", img: "img/C/sinzikun.png",Tag:"クルス",url:"https://iachara.com/view/9731936" },
+                { name: "小田月菜", img: "img/P/odatukina.png",Tag:"パピコ",url:"https://iachara.com/view/7929270" },
+                { name: "星咲親弘", img: "img/P/hoshizakitikahiro.png",Tag:"パピコ",url:"https://iachara.com/view/8487800" },
+                { name: "国谷陽", img: "img/P/kunitaniharu.png",Tag:"パピコ",url:"https://iachara.com/view/8509944" },
+                { name: "江戸川マヨイ", img: "img/P/kunitaniharu.png",Tag:"パピコ",url:"https://iachara.com/view/8945674" },
+                { name: "国木田清春", img: "img/P/kunikida.png",Tag:"パピコ",url:"https://iachara.com/view/9301911" },
+                { name: "奴田原沙織", img: "img/P/mutahara.png",Tag:"パピコ",url:"https://iachara.com/view/9467979" },
+                { name: "月代蒼朮", img: "img/P/tukisiro.png",Tag:"パピコ",url:"https://iachara.com/view/9057024" },
+                { name: "涼風夏鈴", img: "img/P/karin.png",Tag:"パピコ",url:"https://iachara.com/view/9692415" },
+                { name: "ヨグ = 祖 = トス", img: "img/F/yoguso.png",Tag:"フォル",url:"https://iachara.com/view/6529725" },
+                { name: "生魂太郎", img: "img/F/syoukon.png",Tag:"フォル",url:"https://iachara.com/view/7457067" },
+                { name: "アザ = 外 = トス", img: "img/F/soto.png",Tag:"フォル",url:"https://iachara.com/view/7654450" },
+                { name: "革命moroha", img: "img/F/kakumei.png",Tag:"フォル",url:"https://iachara.com/view/7788850" },
+                { name: "ルルカロス", img: "img/F/rurukarosu.png",Tag:"フォル",url:"https://iachara.com/view/7975620" },
+                { name: "秤アツコ", img: "img/F/ginzi.png",Tag:"フォル",url:"https://iachara.com/view/8118764" },
+                { name: "勘解由小路楓", img: "img/F/kaede.png",Tag:"フォル",url:"https://iachara.com/view/8194075" },
+                { name: "鈴月爛", img: "img/F/ran.png",Tag:"フォル",url:"https://iachara.com/view/8715849" },
+                { name: "月宮アザミ", img: "img/F/tukimiyaazami.png",Tag:"フォル",url:"https://iachara.com/view/8562931" },
+                { name: "歌澄リリー", img: "img/F/rr.png",Tag:"フォル",url:"https://iachara.com/view/9007567" },
+                { name: "千草葵", img: "img/F/aoi.png",Tag:"フォル",url:"https://iachara.com/view/9259705" },
+                { name: "天道光", img: "img/F/hikari.png",Tag:"フォル",url:"https://iachara.com/view/9552756" },
+                { name: "灑瀲雫", img: "img/F/sizuku.png",Tag:"フォル",url:"https://iachara.com/view/9627240" },
+                { name: "鏡音愛莉朱", img: "img/F/arisu.png",Tag:"フォル",url:"https://iachara.com/view/9667366" },
+                { name: "五行紬", img: "img/F/tumugi.png",Tag:"フォル",url:"https://iachara.com/view/9731002" },
+                { name: "泡沫玖音", img: "img/F/kuon.png",Tag:"フォル",url:"https://iachara.com/view/9701215" },
+                { name: "正義英雄", img: "img/O/masayosi.png",Tag:" ポテト" ,url:"https://iachara.com/view/7406795"},
+                { name: "海里成章", img: "img/O/kairiseisyou.png",Tag:" ポテト",url:"https://iachara.com/view/7741435" },
+                { name: "桐谷祐佳", img: "img/O/kiritani.png",Tag:" ポテト",url:"https://iachara.com/view/7929139" },
+                { name: "南向日葵", img: "img/O/himawari.png",Tag:" ポテト",url:"https://iachara.com/view/8084247" },
+                { name: "藤倉透", img: "img/O/huzikurato.png",Tag:" ポテト",url:"https://iachara.com/view/8198582" },
+                { name: "空海諦", img: "img/O/tei.png",Tag:" ポテト",url:"https://iachara.com/view/8461702" },
+                { name: "月宮スミレ", img: "img/O/tukimijyasumire.png",Tag:" ポテト",url:"https://iachara.com/view/8562912" },
+                { name: "笠原真弓", img: "img/O/kasahara.png",Tag:" ポテト",url:"https://iachara.com/view/8830938" },
+                { name: "服部平一", img: "img/O/hukube.png",Tag:" ポテト",url:"https://iachara.com/view/9109224" },
+                { name: "矢吹蘭", img: "img/O/yabuki.png",Tag:" ポテト" ,url:"https://iachara.com/view/9527412"},
+                { name: "小松裕一", img: "img/O/komatuu.png",Tag:" ポテト",url:"https://iachara.com/view/9542987" },
+                { name: "皇芳野", img: "img/O/yoshinosannhakaerimasita.png",Tag:" ポテト",url:"https://iachara.com/view/9609987" },
+                { name: "リアーナ・ロワール", img: "img/O/rowa.png",Tag:" ポテト",url:"https://iachara.com/view/9677265" },
+                { name: "間宮千尋", img: "img/O/tihiro.png",Tag:" ポテト",url:"https://iachara.com/view/9716543" },
+                { name: "岸田検討", img: "img/A/kentou.png",Tag:" アポ" ,url:"https://iachara.com/view/5771220"},
+                { name: "星熊ヒナコ", img: "img/A/hosiguma.png",Tag:" アポ" ,url:"https://iachara.com/view/6531312"},
+                { name: "立花興毅", img: "img/A/kouki.png",Tag:" アポ",url:"https://iachara.com/view/7877297" },
+                { name: "物延ミノ", img: "img/A/mino.png",Tag:" アポ",url:"https://iachara.com/view/8119611" },
+                { name: "文月梓乃", img: "img/A/sino.png",Tag:" アポ",url:"https://iachara.com/view/8119611" },
+                { name: "雛罌粟晴香", img: "img/A/hinagesi.png",Tag:" アポ" ,url:"https://iachara.com/view/8550748"},
+                { name: "宮野木加古", img: "img/A/kako.png",Tag:" アポ",url:"https://iachara.com/view/8830811" },
+                { name: "星原楊", img: "img/A/yanagi.png",Tag:" アポ",url:"https://iachara.com/view/9209046" },
+                { name: "双海雪春", img: "img/A/yukiharu.png",Tag:" アポ",url:"https://iachara.com/view/9744578" },
+                { name: "木ノ原秀至", img: "img/A/syui.png",Tag:" アポ",url:"https://iachara.com/view/9787227" },
+                ], cssClass: "super-rare" },
+                { name: "ウルトラレア", probability: 0.025 / (0.975 + 0.025), characters: [
+                { name: "蒲城凛", img: "img/C/rin.png" ,Tag:" クルス",url:"https://iachara.com/view/9464564"},
+                { name: "ローレン・ミッシェル・有本", img: "img/C/roren.png",Tag:" クルス" ,url:"https://iachara.com/view/7929161"},
+                { name: "舘亜希", img: "img/C/tatiaki.png",Tag:" クルス",url:"https://iachara.com/view/8245685" },
+                { name: "竹園レッダ", img: "img/C/retta.png",Tag:" クルス",url:"https://iachara.com/view/8461720" },
+                { name: "緒方瞬", img: "img/C/ogata.png",Tag:" クルス",url:"https://iachara.com/view/9217033" },
+                { name: "夜桜涼夏", img: "img/C/yozakurasuzuka.png",Tag:" クルス",url:"https://iachara.com/view/9710843" },
+                { name: "朝凪トワ", img: "img/O/towa.png",Tag:" ポテト",url:"https://iachara.com/view/9465990" },
+                { name: "栖原凪咲", img: "img/A/nagi.png",Tag:" アポ",url:"https://iachara.com/view/9471171" },  // ピックアップ
+                { name: "桃井マオ", img: "img/P/momoimao.png",Tag:" パピコ",url:"https://iachara.com/view/8565641" },
+                { name: "細谷文彰", img: "img/P/hosoyasan.png",Tag:" パピコ",url:"https://iachara.com/view/8715866" },
+                { name: "高野鏡花", img: "img/P/takanokyouka.png",Tag:" パピコ",url:"https://iachara.com/view/9109196" },
+                { name: "鶴見メモル", img: "img/P/memoru.png",Tag:" パピコ",url:"https://iachara.com/view/9583204" },
+                { name: "泡沫セツナ", img: "img/F/setu.png",Tag:" フォル",url:"https://iachara.com/view/9416809" },
+                { name: "ウボ = 犠 = スラ", img: "img/F/ubosa.png",Tag:" フォル",url:"https://iachara.com/view/7898392"},
+                { name: "芙蓉菖蒲", img: "img/F/ayame.png",Tag:" フォル",url:"https://iachara.com/view/9217026" },
+                { name: "夜桜麗", img: "img/F/yozakurarei.png",Tag:" フォル",url:"https://iachara.com/view/9543615" },
+                { name: "星乃光", img: "img/F/sutar.png",Tag:" フォル",url:"https://iachara.com/view/6759359" },
+                { name: "高木流美", img: "img/F/rumi.png",Tag:" フォル",url:"https://iachara.com/view/9710847" },
+                { name: "生魚人足", img: "img/O/sakana.png",Tag:" ポテト",url:"https://iachara.com/view/6700390" },
+                { name: "高橋百合", img: "img/O/yuri.png" ,Tag:" ポテト",url:"https://iachara.com/view/8303137" },
+                { name: "日向綾乃", img: "img/O/himukai.png",Tag:" ポテト" ,url:"https://iachara.com/view/8616801" },
+                { name: "アイ", img: "img/O/ai.png",Tag:" ポテト",url:"https://iachara.com/view/8715827"  },
+                { name: "長山蓮季", img: "img/O/hasuki.png",Tag:" ポテト",url:"https://iachara.com/view/9552754"  },
+                { name: "八宮翼", img: "img/O/hatimiya.png",Tag:" ポテト",url:"https://iachara.com/view/9583187"  },
+                { name: "栖原嵐", img: "img/O/sumihararan.png",Tag:" ポテト" ,url:"https://iachara.com/view/9719678" },
+                { name: "ピピ美【一號】", img: "img/A/pipimi.png" ,Tag:" アポ",url:"https://iachara.com/view/6993810"},
+                { name: "一ノ瀬晴香", img: "img/A/itnose.png",Tag:" アポ",url:"https://iachara.com/view/7406827" },
+                { name: "月宮陽葵", img: "img/A/tukimiyahimari.png",Tag:" アポ",url:"https://iachara.com/view/8562916" },
+                { name: "秋月穂乃歌", img: "img/A/honoka.png",Tag:" アポ",url:"https://iachara.com/view/9637161" },
+                ], cssClass: "ultra-rare" }
+            ];
+
+            const random = Math.random(); // 0 ~ 1のランダム数値
+            let cumulativeProbability = 0;
+
+            // スーパーレア以上の確率で抽選
+            for (const rarity of specialRarities) {
+                cumulativeProbability += rarity.probability;
+                if (random < cumulativeProbability) {
+                    const shuffledCharacters = shuffle([...rarity.characters]); // キャラクターをシャッフル
+                    const character = shuffledCharacters[0]; // シャッフル後の最初のキャラを選ぶ
+                    return { rarity, character };
+                }
+            }
+
+            return { rarity: specialRarities[0], character: specialRarities[0].characters[0] };
+        }
+
+// キャラクター出現回数を更新して表示する関数
+function updateCharacterCount(sortedCharacters = null) {
+    const characterCountList = document.getElementById("character-count-list");
+    characterCountList.innerHTML = ''; // リストをリセット
+
+    // レアリティごとのキャラクター数を表示
+    const rarityCountSection = document.createElement("div");
+    rarityCountSection.innerHTML = '<h3>レアリティごとのキャラクター数</h3>';
+    rarities.forEach(rarity => {
+        const count = rarity.characters.length;
+        const rarityItem = document.createElement("p");
+        rarityItem.textContent = `${rarity.name}: ${count}種類`;
+        rarityCountSection.appendChild(rarityItem);
+    });
+    characterCountList.appendChild(rarityCountSection);
+
+    // ソートされていない場合はデフォルトの順番でキャラクターを表示
+    const charactersToDisplay = sortedCharacters || Object.keys(characterCount);
+
+    // キャラクターごとの出現回数を表示
+    charactersToDisplay.forEach(character => {
+        const listItem = document.createElement("li");
+
+        // ウルトラレアなら名前の色を赤色に変える
+        const isUltraRare = rarities[2].characters.some(ultraRareChar => ultraRareChar.name === character);
+        // スーパーレアなら名前の色を緑色に変える
+        const isSuperRare = rarities[1].characters.some(superRareChar => superRareChar.name === character);
+
+        if (isUltraRare) {
+            listItem.innerHTML = `<span style="color: red;">${character}</span>: ${characterCount[character]}回`;
+        } else if (isSuperRare) {
+            listItem.innerHTML = `<span style="color: green;">${character}</span>: ${characterCount[character]}回`;
+        } else {
+            listItem.textContent = `${character}: ${characterCount[character]}回`;
+        }
+
+        characterCountList.appendChild(listItem);
+    });
+}
+
+// ガチャ履歴を更新する関数
+function updateHistory(historyDiv) {
+    historyDiv.innerHTML = ''; // 履歴をリセット
+    historyList.forEach((roll, index) => {
+        const rollDiv = document.createElement("div");
+
+        // 履歴ごとの三角ボタンと詳細表示
+        rollDiv.innerHTML = `
+            <div>
+                <button class="toggle-button" id="toggle-button-${index}" onclick="toggleDetails(${index})">▶</button>
+                <strong>ガチャ ${index + 1}:</strong>
+                <div id="details-${index}" class="hidden">
+                    ${roll.map(r => {
+                        // ウルトラレアなら名前の色を変える
+                        const isUltraRare = rarities[2].characters.some(ultraRareChar => ultraRareChar.name === r.name);
+                        return isUltraRare ? `<span style="color: red;">${r.name} (${r.rarity})</span>` : `${r.name} (${r.rarity})`;
+                        const isSuperRare = rarities[1].characters.some(superRareChar => superRareChar.name === r.name);
+                        return isSuperRare ? `<span style="color: green;">${r.name} (${r.rarity})</span>` : `${r.name} (${r.rarity})`;
+                    }).join(', ')}
+                </div>
+            </div>
+        `;
+        historyDiv.appendChild(rollDiv);
+    });
+}
+
+        // 詳細表示を切り替える関数
+        function toggleDetails(index) {
+            const detailsDiv = document.getElementById(`details-${index}`);
+            const toggleButton = document.getElementById(`toggle-button-${index}`);
+
+            // 詳細の表示・非表示を切り替え
+            if (detailsDiv.classList.contains('hidden')) {
+                detailsDiv.classList.remove('hidden');
+                detailsDiv.classList.add('visible');
+                toggleButton.textContent = '▼';  // 展開時の三角の向きを変更
+            } else {
+                detailsDiv.classList.remove('visible');
+                detailsDiv.classList.add('hidden');
+                toggleButton.textContent = '▶';  // 折りたたんだ時の三角の向き変更
+            }
+        }
+
+// キャラクター出現回数を更新して表示する関数
+function updateCharacterCount(sortedCharacters = null) {
+    const characterCountList = document.getElementById("character-count-list");
+    characterCountList.innerHTML = ''; // リストをリセット
+
+    // ソートされていない場合はデフォルトの順番でキャラクターを表示
+    const charactersToDisplay = sortedCharacters || Object.keys(characterCount);
+
+    // キャラクターごとの出現回数を表示
+    charactersToDisplay.forEach(character => {
+        const listItem = document.createElement("li");
+
+        // ウルトラレアなら名前の色を赤色に変える
+        const isUltraRare = rarities[2].characters.some(ultraRareChar => ultraRareChar.name === character);
+        // スーパーレアなら名前の色を緑色に変える
+        const isSuperRare = rarities[1].characters.some(superRareChar => superRareChar.name === character);
+
+        if (isUltraRare) {
+            listItem.innerHTML = `<span style="color: red;">${character}</span>: ${characterCount[character]}回`;
+        } else if (isSuperRare) {
+            listItem.innerHTML = `<span style="color: green;">${character}</span>: ${characterCount[character]}回`;
+        } else {
+            listItem.textContent = `${character}: ${characterCount[character]}回`;
+        }
+
+        characterCountList.appendChild(listItem);
+    });
+}
+
+
+// 名前順にソート
+function sortByName() {
+    const sortedCharacters = Object.keys(characterCount).sort((a, b) => a.localeCompare(b));
+    updateCharacterCount(sortedCharacters);
+}
+
+// 出現回数が少ない順にソート
+function sortByCount() {
+    const sortedCharacters = Object.keys(characterCount).sort((a, b) => characterCount[a] - characterCount[b]);
+    updateCharacterCount(sortedCharacters);
+}
+
+// 出現回数が多い順にソート
+function sortByUpCount() {
+    const sortedCharacters = Object.keys(characterCount).sort((b, a) => characterCount[a] - characterCount[b]);
+    updateCharacterCount(sortedCharacters);
+}
+// レアリティ順にソート
+function sortByRarity() {
+    const sortedCharacters = Object.keys(characterCount).sort((a, b) => {
+        // キャラクターのレアリティを取得
+        const rarityA = getRarity(a);
+        const rarityB = getRarity(b);
+        return rarityB - rarityA; // レアリティが高い順にソート（ウルトラレアが最上位）
+    });
+    updateCharacterCount(sortedCharacters);
+}
+
+// レアリティを取得するヘルパー関数
+function getRarity(character) {
+    if (rarities[2].characters.some(ultraRareChar => ultraRareChar.name === character)) {
+        return 3; // ウルトラレア
+    }
+    if (rarities[1].characters.some(superRareChar => superRareChar.name === character)) {
+        return 2; // スーパーレア
+    }
+    return 1; // レア
+}
+
+// 出た順にソート
+function sortByOrder() {
+    updateCharacterCount();  // 出た順はそのまま表示
+}
+
+    </script>
+</body>
+</html>
